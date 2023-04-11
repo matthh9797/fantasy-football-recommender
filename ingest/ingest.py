@@ -1,9 +1,8 @@
-from pathlib import Path
 import pandas as pd
 from google.cloud import bigquery
 
-from apis.fantasy_premier_league import get_fantasy_api_data
-from helpers.gcp import GcpConnector
+from fpl import get_fantasy_api_data
+from gcp import GcpConnector
 
 
 def download(endpoint: str) -> dict:
@@ -29,9 +28,7 @@ def dict_to_dataframe(json: dict, keys: list) -> pd.DataFrame:
     return df_dict
 
 
-def upload(bq_config, dataset_id, df_dict):
-
-    gcp_connector = GcpConnector(bq_config)
+def upload(gcp_connector, dataset_id, df_dict):
 
     job_config = bigquery.LoadJobConfig(
         write_disposition="WRITE_TRUNCATE",
@@ -41,3 +38,20 @@ def upload(bq_config, dataset_id, df_dict):
     for dataframe_name, dataframe in df_dict.items():
         table_ref = dataset_ref.table(dataframe_name)
         gcp_connector.upload_dataframe_to_table(dataframe, table_ref, job_config)
+
+
+def ingest(config, env='dev'):
+    # Steps
+    bootstrip_dict = download(config['fantasy_football_api']['endpoint'])
+    # elements_df, element_types_df, teams_df = dict_to_dataframe(json, keys)
+    df_dict = dict_to_dataframe(bootstrip_dict, config['fantasy_football_api']['tables'])
+
+    if env == 'dev':
+        gcp_connector = GcpConnector(config['bigquery'])
+    elif env == 'prod':
+        gcp_connector = GcpConnector()
+    else:
+        return "Env must be dev or prod"
+
+    return upload(gcp_connector, config['bigquery']['dest_dataset_id'], df_dict)
+

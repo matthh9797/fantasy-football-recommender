@@ -1,6 +1,7 @@
 from google.cloud import bigquery
 from google.oauth2 import service_account
 import pandas as pd
+from pathlib import Path
 
 
 class GcpConnector:
@@ -9,15 +10,21 @@ class GcpConnector:
     @param bq_config configuration for connecting to bigquery
     """
 
-    def __init__(self, bq_config: dict) -> None:
-        key_path = bq_config["key_path"]
-        credentials = self.__auth_with_service_key(key_path)
-        self.billing_project = credentials.project_id
+    def __init__(self, bq_config = None) -> None:
+        if bq_config is not None:
+            downloads_path = str(Path.home() / "Downloads")
+            key_path = f'{downloads_path}/{bq_config["key_file"]}'
+            credentials = self.__auth_with_service_key(key_path)
+            self.billing_project = credentials.project_id
 
-        # Construct a BigQuery client object.
-        self.client = bigquery.Client(
-            credentials=credentials, project=credentials.project_id
-        )
+            # Construct a BigQuery client object.
+            self.client = bigquery.Client(
+                credentials=credentials, project=credentials.project_id
+            )
+        else:
+            # Construct a BigQuery client object.
+            self.client = bigquery.Client()      
+
 
     def __auth_with_service_key(self, key_path: str) -> service_account.Credentials:
         # Retrieve service account

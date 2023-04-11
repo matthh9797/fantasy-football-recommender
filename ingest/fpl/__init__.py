@@ -1,0 +1,1 @@
+from .fpl import get_fantasy_api_data

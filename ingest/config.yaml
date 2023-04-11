@@ -7,3 +7,4 @@ fantasy_football_api:
   
 bigquery:
   dest_dataset_id: fantasy_football_raw
+  key_file: data-science-on-gcp-323609-d6df605659c2.json
